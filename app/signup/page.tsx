@@ -20,9 +20,9 @@ function SignupContent() {
   const selected = searchParams.get("plan") || "starter";
   const plan = plans[selected] || plans.starter;
 
-  const [mobile, setMobile] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
