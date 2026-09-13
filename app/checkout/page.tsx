@@ -12,49 +12,17 @@ const plans: Record<
     fee: string;
   }
 > = {
-  starter: {
-    name: "Starter",
-    account: "₹3,000",
-    fee: "₹1,000",
-  },
-  basic: {
-    name: "Basic",
-    account: "₹5,000",
-    fee: "₹1,200",
-  },
-  growth: {
-    name: "Growth",
-    account: "₹8,000",
-    fee: "₹1,440",
-  },
-  pro: {
-    name: "Pro",
-    account: "₹10,000",
-    fee: "₹1,730",
-  },
-  advanced: {
-    name: "Advanced",
-    account: "₹20,000",
-    fee: "₹2,080",
-  },
-  elite: {
-    name: "Elite",
-    account: "₹25,000",
-    fee: "₹2,490",
-  },
+  starter: { name: "Starter", account: "₹3,000", fee: "₹1,000" },
+  basic: { name: "Basic", account: "₹5,000", fee: "₹1,200" },
+  growth: { name: "Growth", account: "₹8,000", fee: "₹1,440" },
+  pro: { name: "Pro", account: "₹10,000", fee: "₹1,730" },
+  advanced: { name: "Advanced", account: "₹20,000", fee: "₹2,080" },
+  elite: { name: "Elite", account: "₹25,000", fee: "₹2,490" },
 };
-
-declare global {
-  interface Window {
-    Cashfree: any;
-  }
-}
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
-
   const selectedPlan = searchParams.get("plan") || "starter";
-
   const plan = plans[selectedPlan] || plans.starter;
 
   const [fullName, setFullName] = useState("");
@@ -64,28 +32,6 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const loadPPayU = () => {
-    return new Promise<boolean>((resolve) => {
-      if (window.PaymentRequest) {
-        resolve(true);
-        return;
-      }
-
-      const script = document.createElement("script");
-
-      script.src =
-        "https://sdk.cashfree.com/js/v3/cashfree.js";
-
-      script.async = true;
-
-      script.onload = () => resolve(true);
-
-      script.onerror = () => resolve(false);
-
-      document.body.appendChild(script);
-    });
-  };
-
   const handlePayment = async () => {
     setError("");
 
@@ -94,18 +40,12 @@ function CheckoutContent() {
       return;
     }
 
-    if (!email.trim()) {
-      setError("Please enter your email.");
-      return;
-    }
-
-    if (!email.includes("@")) {
+    if (!email.trim() || !email.includes("@")) {
       setError("Please enter a valid email.");
       return;
     }
 
     const cleanPhone = phone.replace(/\D/g, "");
-
     if (cleanPhone.length !== 10) {
       setError("Please enter a valid 10-digit mobile number.");
       return;
@@ -114,69 +54,44 @@ function CheckoutContent() {
     try {
       setLoading(true);
 
-      const PayULoaded = await loadPPayU();
-
-      if (!PayULoaded) {
-        setError(
-          "Unable to load PayU. Please try again."
-        );
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(
-        "/api/cashfree/order",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            plan: selectedPlan,
-
-            customerName:
-              fullName.trim(),
-
-            customerEmail:
-              email.trim(),
-
-            customerPhone:
-              cleanPhone,
-          }),
-        }
-      );
+      // 1. Call your backend to create the order and get the hash
+      const response = await fetch("/api/payu/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: selectedPlan,
+          customerName: fullName.trim(),
+          customerEmail: email.trim(),
+          customerPhone: cleanPhone,
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(
-          data.error ||
-            "Unable to create payment order."
-        );
+        throw new Error(data.error || "Unable to create payment order.");
       }
 
-      const cashfree =
-        window.Cashfree({
-          mode: "sandbox",
-        });
+      // 2. Dynamically create a form and auto-submit it to PayU
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.payuUrl;
 
-      await cashfree.checkout({
-        paymentSessionId:
-          data.paymentSessionId,
-
-        redirectTarget: "_self",
+      Object.entries(data.params).forEach(([key, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value as string;
+        form.appendChild(input);
       });
+
+      document.body.appendChild(form);
+      form.submit();
     } catch (error) {
       console.error(error);
-
       setError(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong."
+        error instanceof Error ? error.message : "Something went wrong."
       );
-
       setLoading(false);
     }
   };
@@ -184,59 +99,31 @@ function CheckoutContent() {
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-white">
       <div className="mx-auto max-w-lg pt-10">
-
         <h1 className="text-center text-4xl font-bold">
-          Trade
-          <span className="text-cyan-400">
-            Nova
-          </span>
+          Trade<span className="text-cyan-400">Nova</span>
         </h1>
 
         <div className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-8">
-
-          <h2 className="text-2xl font-bold">
-            Checkout
-          </h2>
+          <h2 className="text-2xl font-bold">Checkout</h2>
 
           <div className="mt-6 rounded-xl bg-slate-900 p-5">
-
-            <p className="text-sm text-slate-400">
-              Selected Plan
-            </p>
-
-            <p className="mt-1 text-xl font-bold">
-              {plan.name}
-            </p>
-
+            <p className="text-sm text-slate-400">Selected Plan</p>
+            <p className="mt-1 text-xl font-bold">{plan.name}</p>
             <div className="mt-5 flex justify-between">
-              <span className="text-slate-400">
-                Account
-              </span>
-
-              <span>
-                {plan.account}
-              </span>
+              <span className="text-slate-400">Account</span>
+              <span>{plan.account}</span>
             </div>
-
             <div className="mt-3 flex justify-between">
-              <span className="text-slate-400">
-                Challenge Fee
-              </span>
-
-              <span className="font-bold text-cyan-400">
-                {plan.fee}
-              </span>
+              <span className="text-slate-400">Challenge Fee</span>
+              <span className="font-bold text-cyan-400">{plan.fee}</span>
             </div>
-
           </div>
 
           <input
             type="text"
             placeholder="Full Name"
             value={fullName}
-            onChange={(event) =>
-              setFullName(event.target.value)
-            }
+            onChange={(e) => setFullName(e.target.value)}
             className="mt-6 w-full rounded-xl border border-white/10 bg-slate-900 p-3 outline-none focus:border-cyan-400"
           />
 
@@ -244,9 +131,7 @@ function CheckoutContent() {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(event) =>
-              setEmail(event.target.value)
-            }
+            onChange={(e) => setEmail(e.target.value)}
             className="mt-4 w-full rounded-xl border border-white/10 bg-slate-900 p-3 outline-none focus:border-cyan-400"
           />
 
@@ -256,11 +141,7 @@ function CheckoutContent() {
             maxLength={10}
             placeholder="10-digit Mobile Number"
             value={phone}
-            onChange={(event) =>
-              setPhone(
-                event.target.value.replace(/\D/g, "")
-              )
-            }
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
             className="mt-4 w-full rounded-xl border border-white/10 bg-slate-900 p-3 outline-none focus:border-cyan-400"
           />
 
@@ -276,15 +157,12 @@ function CheckoutContent() {
             disabled={loading}
             className="mt-7 w-full rounded-xl bg-cyan-400 p-4 font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading
-              ? "Opening Payment..."
-              : `Pay ${plan.fee}`}
+            {loading ? "Opening Payment..." : `Pay ${plan.fee}`}
           </button>
 
           <p className="mt-3 text-center text-xs text-slate-600">
-            Cashfree Sandbox Test Mode
+            PayU Sandbox Test Mode
           </p>
-
         </div>
 
         <Link
@@ -293,7 +171,6 @@ function CheckoutContent() {
         >
           ← Back to Challenges
         </Link>
-
       </div>
     </main>
   );

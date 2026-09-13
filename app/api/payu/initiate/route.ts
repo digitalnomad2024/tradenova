@@ -1,47 +1,67 @@
 // app/api/payu/initiate/route.ts
-import { NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { NextResponse } from "next/server";
+import crypto from "crypto";
+
+const planAmounts: Record<string, number> = {
+  starter: 1000,
+  basic: 1200,
+  growth: 1440,
+  pro: 1730,
+  advanced: 2080,
+  elite: 2490,
+};
 
 export async function POST(request: Request) {
   try {
-    const { amount, productInfo, firstName, email, phone, txnId } = await request.json();
-    
+    const { plan, customerName, customerEmail, customerPhone } = await request.json();
+
+    const amount = planAmounts[plan];
+    if (!amount) {
+      return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
+    }
+
     const key = process.env.PAYU_MERCHANT_KEY!;
     const salt = process.env.PAYU_MERCHANT_SALT!;
-    
-    // Generate a unique transaction ID if not provided
-    const transactionId = txnId || `TXN_${Date.now()}`;
-    
-    // Create the hash string in the exact order PayU expects
-    const hashString = `${key}|${transactionId}|${amount}|${productInfo}|${firstName}|${email}|||||||||||${salt}`;
-    
-    // Generate the SHA-512 hash
-    const hash = crypto.createHash('sha512').update(hashString).digest('hex');
-    
-    // PayU's payment endpoint (use test for now)
-    const payuUrl = process.env.PAYU_ENV === 'LIVE' 
-      ? 'https://secure.payu.in/_payment' 
-      : 'https://test.payu.in/_payment';
-    
-    // Return the data needed for the frontend to build the form
+
+    // Generate a unique transaction ID
+    const txnid = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+    const productinfo = `TradeNova ${plan} Plan`;
+    const firstname = customerName.split(" ")[0] || customerName;
+    const email = customerEmail;
+
+    // PayU hash logic: sha512(key|txnid|amount|productinfo|firstname|email|||||||||||salt)
+    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+    const hash = crypto.createHash("sha512").update(hashString).digest("hex");
+
+    const payuUrl =
+      process.env.PAYU_ENV === "LIVE"
+        ? "https://secure.payu.in/_payment"
+        : "https://test.payu.in/_payment";
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
     return NextResponse.json({
       success: true,
       payuUrl,
       params: {
         key,
-        txnid: transactionId,
-        amount,
-        productinfo: productInfo,
-        firstname: firstName,
+        txnid,
+        amount: amount.toString(),
+        productinfo,
+        firstname,
         email,
-        phone,
+        phone: customerPhone,
         hash,
-        surl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payu/success`,
-        furl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payu/failure`,
-      }
+        surl: `${siteUrl}/api/payu/success`,
+        furl: `${siteUrl}/api/payu/failure`,
+      },
     });
   } catch (error) {
-    console.error('PayU initiation error:', error);
-    return NextResponse.json({ error: 'Failed to initiate payment' }, { status: 500 });
+    console.error("PayU initiation error:", error);
+    return NextResponse.json(
+      { error: "Failed to initiate payment" },
+      { status: 500 }
+    );
   }
 }
