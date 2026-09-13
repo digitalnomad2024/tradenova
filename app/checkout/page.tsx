@@ -64,9 +64,9 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const loadCashfree = () => {
+  const loadPPayU = () => {
     return new Promise<boolean>((resolve) => {
-      if (window.Cashfree) {
+      if (window.PaymentRequest) {
         resolve(true);
         return;
       }
@@ -114,11 +114,11 @@ function CheckoutContent() {
     try {
       setLoading(true);
 
-      const cashfreeLoaded = await loadCashfree();
+      const PayULoaded = await loadPPayU();
 
-      if (!cashfreeLoaded) {
+      if (!PayULoaded) {
         setError(
-          "Unable to load Cashfree. Please try again."
+          "Unable to load PayU. Please try again."
         );
         setLoading(false);
         return;
