@@ -20,7 +20,7 @@ export default function Home() {
               href="/signup"
               className="rounded-lg bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
             >
-              href
+              signup
             </a>
           </div>
         </div>
