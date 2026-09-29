@@ -12,11 +12,11 @@ const plans: Record<
     fee: string;
   }
 > = {
-  starter: { name: "Starter", account: "₹3,000", fee: "₹1,000" },
-  basic: { name: "Basic", account: "₹5,000", fee: "₹1,200" },
-  growth: { name: "Growth", account: "₹8,000", fee: "₹1,440" },
-  pro: { name: "Pro", account: "₹10,000", fee: "₹1,730" },
-  advanced: { name: "Advanced", account: "₹20,000", fee: "₹2,080" },
+  starter: { name: "Starter", account: "₹3,000", fee: "₹300" },
+  basic: { name: "Basic", account: "₹5,000", fee: "₹500" },
+  growth: { name: "Growth", account: "₹8,000", fee: "₹800" },
+  pro: { name: "Pro", account: "₹10,000", fee: "₹1000" },
+  advanced: { name: "Advanced", account: "₹20,000", fee: "₹2000" },
   elite: { name: "Elite", account: "₹25,000", fee: "₹2,490" },
 };
 
