@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
+import {
+  AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine,
+} from "recharts";
 
 // ============================================================
 // CONFIG
@@ -118,7 +123,7 @@ function updateUser(userId: string, patch: Partial<User>) {
 }
 
 // ============================================================
-// ROUTER — hash-based
+// ROUTER
 // ============================================================
 type Route =
   | { name: "home" }
@@ -172,21 +177,23 @@ export default function Page() {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
 
-  // Load session on mount
   useEffect(() => {
     setUser(getCurrentUser());
     setReady(true);
   }, []);
 
-  // Refresh user whenever the route changes (picks up status updates)
   useEffect(() => {
     setUser(getCurrentUser());
   }, [route]);
 
-  // Redirect guards
   useEffect(() => {
     if (!ready) return;
-    if ((route.name === "challenge" || route.name === "checkout" || route.name === "dashboard") && !user) {
+    if (
+      (route.name === "challenge" ||
+        route.name === "checkout" ||
+        route.name === "dashboard") &&
+      !user
+    ) {
       navigate("signup");
     }
   }, [ready, user, route]);
@@ -207,9 +214,7 @@ export default function Page() {
     case "challenge":
       return user ? <ChallengeView user={user} onLogout={setUser} /> : null;
     case "checkout":
-      return user ? (
-        <CheckoutView user={user} planKey={route.plan} />
-      ) : null;
+      return user ? <CheckoutView user={user} planKey={route.plan} /> : null;
     case "dashboard":
       return user ? <DashboardView user={user} onLogout={setUser} /> : null;
     case "admin":
@@ -222,7 +227,13 @@ export default function Page() {
 // ============================================================
 // SHARED UI
 // ============================================================
-function NavBar({ user, onLogout }: { user?: User | null; onLogout?: (u: User | null) => void }) {
+function NavBar({
+  user,
+  onLogout,
+}: {
+  user?: User | null;
+  onLogout?: (u: User | null) => void;
+}) {
   return (
     <nav className="border-b border-white/10">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
@@ -232,10 +243,7 @@ function NavBar({ user, onLogout }: { user?: User | null; onLogout?: (u: User | 
         <div className="flex items-center gap-4 text-sm">
           {user ? (
             <>
-              <a
-                href="#dashboard"
-                className="text-slate-300 hover:text-white"
-              >
+              <a href="#dashboard" className="text-slate-300 hover:text-white">
                 Dashboard
               </a>
               <span className="text-slate-400">{user.name}</span>
@@ -363,7 +371,8 @@ function HomeView() {
         <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-10 text-center md:p-16">
           <h2 className="text-4xl font-bold">Ready to trade bigger?</h2>
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
-            Choose your challenge and start building your trading career with TradeNova.
+            Choose your challenge and start building your trading career with
+            TradeNova.
           </p>
           <a
             href="#signup"
@@ -384,7 +393,15 @@ function HomeView() {
   );
 }
 
-function Feature({ title, description, icon }: { title: string; description: string; icon: string }) {
+function Feature({
+  title,
+  description,
+  icon,
+}: {
+  title: string;
+  description: string;
+  icon: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 transition hover:border-cyan-400/30">
       <div className="text-3xl">{icon}</div>
@@ -439,7 +456,9 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
           </p>
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300">Full Name</label>
+              <label className="block text-sm font-medium text-slate-300">
+                Full Name
+              </label>
               <input
                 type="text"
                 value={name}
@@ -449,7 +468,9 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300">Email</label>
+              <label className="block text-sm font-medium text-slate-300">
+                Email
+              </label>
               <input
                 type="email"
                 value={email}
@@ -459,7 +480,9 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300">Password</label>
+              <label className="block text-sm font-medium text-slate-300">
+                Password
+              </label>
               <input
                 type="password"
                 value={password}
@@ -483,13 +506,18 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
           </form>
           <p className="mt-6 text-center text-sm text-slate-400">
             Already have an account?{" "}
-            <a href="#login" className="font-semibold text-cyan-400 hover:text-cyan-300">
+            <a
+              href="#login"
+              className="font-semibold text-cyan-400 hover:text-cyan-300"
+            >
               Log in
             </a>
           </p>
         </div>
         <div className="mt-6 text-center text-xs text-slate-600">
-          <a href="#home" className="hover:text-slate-400">← Back to Home</a>
+          <a href="#home" className="hover:text-slate-400">
+            ← Back to Home
+          </a>
         </div>
       </div>
     </main>
@@ -527,10 +555,14 @@ function LoginView({ onAuth }: { onAuth: (u: User) => void }) {
         </a>
         <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-8">
           <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="mt-2 text-sm text-slate-400">Log in to continue your challenge.</p>
+          <p className="mt-2 text-sm text-slate-400">
+            Log in to continue your challenge.
+          </p>
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300">Email</label>
+              <label className="block text-sm font-medium text-slate-300">
+                Email
+              </label>
               <input
                 type="email"
                 value={email}
@@ -540,7 +572,9 @@ function LoginView({ onAuth }: { onAuth: (u: User) => void }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300">Password</label>
+              <label className="block text-sm font-medium text-slate-300">
+                Password
+              </label>
               <input
                 type="password"
                 value={password}
@@ -563,8 +597,11 @@ function LoginView({ onAuth }: { onAuth: (u: User) => void }) {
             </button>
           </form>
           <p className="mt-6 text-center text-sm text-slate-400">
-            Don't have an account?{" "}
-            <a href="#signup" className="font-semibold text-cyan-400 hover:text-cyan-300">
+            Don&apos;t have an account?{" "}
+            <a
+              href="#signup"
+              className="font-semibold text-cyan-400 hover:text-cyan-300"
+            >
               Sign up
             </a>
           </p>
@@ -577,7 +614,13 @@ function LoginView({ onAuth }: { onAuth: (u: User) => void }) {
 // ============================================================
 // CHALLENGE
 // ============================================================
-function ChallengeView({ user, onLogout }: { user: User; onLogout: (u: User | null) => void }) {
+function ChallengeView({
+  user,
+  onLogout,
+}: {
+  user: User;
+  onLogout: (u: User | null) => void;
+}) {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <NavBar user={user} onLogout={onLogout} />
@@ -782,7 +825,9 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
               disabled={confirming}
               className="w-full rounded-xl bg-cyan-400 px-6 py-4 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
             >
-              {confirming ? "Setting up your account…" : "I've completed the payment →"}
+              {confirming
+                ? "Setting up your account…"
+                : "I've completed the payment →"}
             </button>
             <p className="mt-3 text-center text-xs text-slate-500">
               Tap after paying. We&apos;ll verify your payment and activate your
@@ -800,8 +845,77 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
 // ============================================================
 // DASHBOARD
 // ============================================================
-function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | null) => void }) {
+function DashboardView({
+  user,
+  onLogout,
+}: {
+  user: User;
+  onLogout: (u: User | null) => void;
+}) {
   const plan = user.plan ? getPlan(user.plan) : null;
+
+  const trades = useMemo(() => generateTrades(user.id, 60), [user.id]);
+
+  const equityData = useMemo(() => {
+    if (!plan) return [];
+    let equity = plan.account;
+    const startEquity = plan.account;
+    let peak = startEquity;
+    return [
+      { trade: 0, equity: startEquity, dd: 0 },
+      ...trades.map((t, i) => {
+        equity += t.pnl;
+        if (equity > peak) peak = equity;
+        const dd = peak > 0 ? ((equity - peak) / peak) * 100 : 0;
+        return {
+          trade: i + 1,
+          equity: Math.round(equity),
+          dd: Number(dd.toFixed(2)),
+        };
+      }),
+    ];
+  }, [plan, trades]);
+
+  const metrics = useMemo(() => {
+    if (!plan) return null;
+    const wins = trades.filter((t) => t.pnl > 0);
+    const losses = trades.filter((t) => t.pnl < 0);
+    const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
+    const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
+    const netPnl = grossWin - grossLoss;
+    const winRate = trades.length ? (wins.length / trades.length) * 100 : 0;
+    const avgWin = wins.length ? grossWin / wins.length : 0;
+    const avgLoss = losses.length ? grossLoss / losses.length : 0;
+    const profitFactor = grossLoss > 0 ? grossWin / grossLoss : 0;
+    const currentEquity = plan.account + netPnl;
+    const peakEquity = Math.max(
+      ...equityData.map((d) => d.equity),
+      plan.account
+    );
+    const maxDD = Math.min(...equityData.map((d) => d.dd), 0);
+    const profitTarget = plan.account * 0.08;
+    const targetProgress = Math.min(
+      100,
+      Math.max(0, (netPnl / profitTarget) * 100)
+    );
+
+    return {
+      totalTrades: trades.length,
+      wins: wins.length,
+      losses: losses.length,
+      winRate,
+      netPnl,
+      netPnlPct: (netPnl / plan.account) * 100,
+      currentEquity,
+      peakEquity,
+      maxDD,
+      avgWin,
+      avgLoss,
+      profitFactor,
+      profitTarget,
+      targetProgress,
+    };
+  }, [plan, trades, equityData]);
 
   if (!plan) {
     return (
@@ -823,54 +937,327 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
     );
   }
 
+  if (!metrics) return null;
+
+  const profitColor = metrics.netPnl >= 0 ? "text-green-400" : "text-red-400";
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <NavBar user={user} onLogout={onLogout} />
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8">
-          <p className="text-sm text-slate-400">Dashboard</p>
-          <h1 className="mt-1 text-3xl font-bold">Your Trading Account</h1>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-3">
-          <div className="rounded-2xl border border-cyan-400/30 bg-cyan-400/5 p-6">
-            <p className="text-xs uppercase tracking-wide text-cyan-400">Account Size</p>
-            <p className="mt-2 text-3xl font-bold">
-              ₹{plan.account.toLocaleString("en-IN")}
-            </p>
-            <p className="mt-1 text-sm text-slate-400">{plan.name} Challenge</p>
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
+        {/* Header */}
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm text-slate-400">Dashboard</p>
+            <h1 className="mt-1 text-3xl font-bold">Trading Performance</h1>
           </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>
-            {user.status === "active" ? (
-              <>
-                <p className="mt-2 text-3xl font-bold text-green-400">Active</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  Your trading credentials are ready
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="mt-2 text-3xl font-bold text-yellow-400">Pending</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  We&apos;re verifying your payment within 24 hours
-                </p>
-              </>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Profit Target</p>
-            <p className="mt-2 text-3xl font-bold">8%</p>
-            <p className="mt-1 text-sm text-slate-400">
-              ₹{Math.round(plan.account * 0.08).toLocaleString("en-IN")} to pass
-            </p>
+          <div className="flex items-center gap-3">
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                user.status === "active"
+                  ? "bg-green-500/10 text-green-400"
+                  : "bg-yellow-500/10 text-yellow-400"
+              }`}
+            >
+              {user.status === "active" ? "ACTIVE" : "PENDING VERIFICATION"}
+            </span>
+            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+              {plan.name} · ₹{plan.account.toLocaleString("en-IN")}
+            </span>
           </div>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2">
+        {/* Top stats */}
+        <div className="mb-6 grid gap-4 md:grid-cols-4">
+          <StatCard
+            label="Account Size"
+            value={`₹${plan.account.toLocaleString("en-IN")}`}
+          />
+          <StatCard
+            label="Current Equity"
+            value={`₹${Math.round(metrics.currentEquity).toLocaleString("en-IN")}`}
+            sub={`${metrics.netPnlPct >= 0 ? "+" : ""}${metrics.netPnlPct.toFixed(2)}%`}
+            subColor={profitColor}
+          />
+          <StatCard
+            label="Net P&L"
+            value={`${metrics.netPnl >= 0 ? "+" : ""}₹${Math.abs(
+              metrics.netPnl
+            ).toLocaleString("en-IN")}`}
+            valueColor={profitColor}
+          />
+          <StatCard
+            label="Max Drawdown"
+            value={`${metrics.maxDD.toFixed(2)}%`}
+            valueColor={metrics.maxDD < -10 ? "text-red-400" : "text-yellow-400"}
+          />
+        </div>
+
+        {/* Profit target */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm text-slate-400">Profit Target Progress</span>
+            <span className="text-sm font-semibold">
+              {metrics.targetProgress.toFixed(1)}%
+            </span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-slate-950">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-green-500 transition-all"
+              style={{ width: `${metrics.targetProgress}%` }}
+            />
+          </div>
+          <div className="mt-3 flex justify-between text-xs text-slate-500">
+            <span>
+              Current: ₹{Math.max(0, metrics.netPnl).toLocaleString("en-IN")}
+            </span>
+            <span>
+              Target: ₹{metrics.profitTarget.toLocaleString("en-IN")} (8%)
+            </span>
+          </div>
+        </div>
+
+        {/* Equity chart */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Equity Curve</h2>
+            <span className="text-xs text-slate-500">
+              {metrics.totalTrades} trades
+            </span>
+          </div>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={equityData}>
+                <defs>
+                  <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+                <XAxis dataKey="trade" stroke="#64748b" tick={{ fontSize: 11 }} />
+                <YAxis
+                  stroke="#64748b"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v) => `₹${(v / 1000).toFixed(1)}k`}
+                  domain={["auto", "auto"]}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#0f172a",
+                    border: "1px solid #1e293b",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
+                  formatter={(v: number) => [
+                    `₹${v.toLocaleString("en-IN")}`,
+                    "Equity",
+                  ]}
+                  labelFormatter={(l) => `Trade #${l}`}
+                />
+                <ReferenceLine
+                  y={plan.account}
+                  stroke="#475569"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: "Start",
+                    fill: "#94a3b8",
+                    fontSize: 10,
+                    position: "insideTopLeft",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="equity"
+                  stroke="#22d3ee"
+                  strokeWidth={2}
+                  fill="url(#equityGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Drawdown chart */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Drawdown</h2>
+            <span className="text-xs text-slate-500">
+              Limit: 10% · Current: {metrics.maxDD.toFixed(2)}%
+            </span>
+          </div>
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={equityData}>
+                <defs>
+                  <linearGradient id="ddGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={0} />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity={0.4} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+                <XAxis dataKey="trade" stroke="#64748b" tick={{ fontSize: 11 }} />
+                <YAxis
+                  stroke="#64748b"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#0f172a",
+                    border: "1px solid #1e293b",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
+                  formatter={(v: number) => [`${v}%`, "Drawdown"]}
+                  labelFormatter={(l) => `Trade #${l}`}
+                />
+                <ReferenceLine
+                  y={-5}
+                  stroke="#eab308"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: "Daily limit -5%",
+                    fill: "#eab308",
+                    fontSize: 10,
+                    position: "insideBottomLeft",
+                  }}
+                />
+                <ReferenceLine
+                  y={-10}
+                  stroke="#ef4444"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: "Max limit -10%",
+                    fill: "#ef4444",
+                    fontSize: 10,
+                    position: "insideBottomLeft",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="dd"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  fill="url(#ddGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Performance metrics */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <h2 className="mb-5 text-lg font-semibold">Performance Metrics</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricBox
+              label="Win Rate"
+              value={`${metrics.winRate.toFixed(1)}%`}
+              sub={`${metrics.wins}W / ${metrics.losses}L`}
+              accent={metrics.winRate >= 50 ? "green" : "yellow"}
+            />
+            <MetricBox
+              label="Profit Factor"
+              value={metrics.profitFactor.toFixed(2)}
+              sub={
+                metrics.profitFactor >= 1.5
+                  ? "Excellent"
+                  : metrics.profitFactor >= 1
+                  ? "Profitable"
+                  : "Below break-even"
+              }
+              accent={
+                metrics.profitFactor >= 1.5
+                  ? "green"
+                  : metrics.profitFactor >= 1
+                  ? "yellow"
+                  : "red"
+              }
+            />
+            <MetricBox
+              label="Total Trades"
+              value={metrics.totalTrades.toString()}
+              sub="Last 60 executions"
+            />
+            <MetricBox
+              label="Average Win"
+              value={`₹${Math.round(metrics.avgWin).toLocaleString("en-IN")}`}
+              accent="green"
+            />
+            <MetricBox
+              label="Average Loss"
+              value={`₹${Math.round(metrics.avgLoss).toLocaleString("en-IN")}`}
+              accent="red"
+            />
+            <MetricBox
+              label="Peak Equity"
+              value={`₹${metrics.peakEquity.toLocaleString("en-IN")}`}
+            />
+          </div>
+        </div>
+
+        {/* Trade history */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <h2 className="mb-5 text-lg font-semibold">Recent Trades</h2>
+          <div className="-mx-6 overflow-x-auto px-6">
+            <table className="w-full min-w-[600px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="pb-3">#</th>
+                  <th className="pb-3">Pair</th>
+                  <th className="pb-3">Side</th>
+                  <th className="pb-3">Date</th>
+                  <th className="pb-3 text-right">P&L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trades
+                  .slice(-15)
+                  .reverse()
+                  .map((t) => (
+                    <tr
+                      key={t.id}
+                      className="border-b border-slate-800/50 last:border-0"
+                    >
+                      <td className="py-3 text-slate-500">{t.id}</td>
+                      <td className="py-3 font-medium">{t.pair}</td>
+                      <td className="py-3">
+                        <span
+                          className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                            t.side === "BUY"
+                              ? "bg-green-500/10 text-green-400"
+                              : "bg-red-500/10 text-red-400"
+                          }`}
+                        >
+                          {t.side}
+                        </span>
+                      </td>
+                      <td className="py-3 text-slate-400">
+                        {new Date(t.date).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td
+                        className={`py-3 text-right font-semibold ${
+                          t.pnl >= 0 ? "text-green-400" : "text-red-400"
+                        }`}
+                      >
+                        {t.pnl >= 0 ? "+" : ""}₹
+                        {Math.abs(t.pnl).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Rules + details */}
+        <div className="grid gap-5 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-lg font-semibold">Challenge Rules</h2>
             <div className="mt-4 space-y-3 text-sm">
@@ -897,34 +1284,121 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
                     : "—"
                 }
               />
-              <Row
-                label="Account Size"
-                value={`₹${plan.account.toLocaleString("en-IN")}`}
-              />
               <Row label="Account ID" value={user.id} />
             </div>
           </div>
         </div>
 
-        {user.status === "active" ? (
-          <div className="mt-8 rounded-2xl border border-green-500/30 bg-green-500/5 p-6 text-center">
-            <p className="text-sm text-green-300">
-              Your account is active. Trading credentials have been sent to{" "}
-              <span className="font-semibold">{user.email}</span>.
-            </p>
-          </div>
-        ) : (
+        {user.status !== "active" && (
           <div className="mt-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-6 text-center">
             <p className="text-sm text-cyan-300">
               We&apos;re verifying your payment. Your trading credentials will be
-              emailed to <span className="font-semibold">{user.email}</span> within
-              24 hours.
+              emailed to <span className="font-semibold">{user.email}</span>{" "}
+              within 24 hours.
             </p>
           </div>
         )}
       </div>
     </main>
   );
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+  subColor,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  subColor?: string;
+  valueColor?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-2 text-2xl font-bold ${valueColor ?? ""}`}>{value}</p>
+      {sub && (
+        <p className={`mt-1 text-xs ${subColor ?? "text-slate-400"}`}>{sub}</p>
+      )}
+    </div>
+  );
+}
+
+function MetricBox({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: "green" | "red" | "yellow";
+}) {
+  const accentClass =
+    accent === "green"
+      ? "text-green-400"
+      : accent === "red"
+      ? "text-red-400"
+      : accent === "yellow"
+      ? "text-yellow-400"
+      : "text-white";
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-2 text-2xl font-bold ${accentClass}`}>{value}</p>
+      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+    </div>
+  );
+}
+
+type Trade = {
+  id: number;
+  date: string;
+  pair: string;
+  side: "BUY" | "SELL";
+  pnl: number;
+};
+
+function generateTrades(userId: string, count: number): Trade[] {
+  let seed = 0;
+  for (let i = 0; i < userId.length; i++) {
+    seed = (seed * 31 + userId.charCodeAt(i)) >>> 0;
+  }
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0xffffffff;
+  };
+
+  const pairs = [
+    "EUR/USD",
+    "GBP/USD",
+    "USD/JPY",
+    "AUD/USD",
+    "BTC/USD",
+    "XAU/USD",
+    "USD/CAD",
+  ];
+  const now = Date.now();
+  const trades: Trade[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const win = rand() > 0.42;
+    const size = 120 + Math.floor(rand() * 480);
+    const pnl = win ? size : -Math.round(size * (0.6 + rand() * 0.5));
+    trades.push({
+      id: i + 1,
+      date: new Date(now - (count - i) * 5 * 3600 * 1000).toISOString(),
+      pair: pairs[Math.floor(rand() * pairs.length)],
+      side: rand() > 0.5 ? "BUY" : "SELL",
+      pnl,
+    });
+  }
+  return trades;
 }
 
 // ============================================================
@@ -1011,9 +1485,21 @@ function AdminView() {
 
         <div className="mb-8 grid gap-4 md:grid-cols-4">
           <AdminStat label="Total Users" value={users.length} />
-          <AdminStat label="Pending" value={pending.length} color="text-yellow-400" />
-          <AdminStat label="Active" value={active.length} color="text-green-400" />
-          <AdminStat label="No Plan" value={noPlan.length} color="text-slate-400" />
+          <AdminStat
+            label="Pending"
+            value={pending.length}
+            color="text-yellow-400"
+          />
+          <AdminStat
+            label="Active"
+            value={active.length}
+            color="text-green-400"
+          />
+          <AdminStat
+            label="No Plan"
+            value={noPlan.length}
+            color="text-slate-400"
+          />
         </div>
 
         <AdminSection title="Pending Verification">
@@ -1046,7 +1532,9 @@ function AdminView() {
 
         <AdminSection title="Signed Up — No Plan Yet">
           {noPlan.length === 0 ? (
-            <p className="py-4 text-sm text-slate-500">Everyone has chosen a plan.</p>
+            <p className="py-4 text-sm text-slate-500">
+              Everyone has chosen a plan.
+            </p>
           ) : (
             noPlan.map((u) => (
               <div
@@ -1069,7 +1557,15 @@ function AdminView() {
   );
 }
 
-function AdminStat({ label, value, color = "text-white" }: { label: string; value: number; color?: string }) {
+function AdminStat({
+  label,
+  value,
+  color = "text-white",
+}: {
+  label: string;
+  value: number;
+  color?: string;
+}) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
@@ -1078,7 +1574,13 @@ function AdminStat({ label, value, color = "text-white" }: { label: string; valu
   );
 }
 
-function AdminSection({ title, children }: { title: string; children: React.ReactNode }) {
+function AdminSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
       <h2 className="mb-4 text-lg font-semibold">{title}</h2>
