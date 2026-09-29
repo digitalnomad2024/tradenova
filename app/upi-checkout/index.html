@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #f6f7f9;
+    margin: 0;
+    padding: 2rem 1rem;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 32rem;
+    width: 100%;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  h1 { margin: 0 0 .5rem; font-size: 1.4rem; text-align: center; }
+  .subtitle { color: #666; font-size: .9rem; text-align: center; margin-bottom: 1.5rem; }
+
+  /* Product list */
+  .product {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #e4e7eb;
+    border-radius: 10px;
+    margin-bottom: .6rem;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color .15s, background .15s;
+  }
+  .product:hover { border-color: #1a73e8; background: #f8faff; }
+  .product:disabled { opacity: .5; cursor: default; }
+  .product-info { display: flex; flex-direction: column; gap: .2rem; }
+  .product-name { font-weight: 600; color: #111; }
+  .product-desc { font-size: .82rem; color: #777; }
+  .product-price { font-weight: 700; color: #1a73e8; white-space: nowrap; }
+
+  /* Pay panel */
+  .pay-panel { display: none; text-align: center; }
+  .pay-panel.active { display: block; }
+  .back {
+    background: none;
+    border: 0;
+    color: #1a73e8;
+    font-size: .9rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    padding: 0;
+  }
+  .back:hover { text-decoration: underline; }
+  .pay-label { color: #666; font-size: .95rem; margin: 0; }
+  .amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #111;
+    margin: .75rem 0;
+  }
+  .qr-container {
+    display: inline-block;
+    padding: 1rem;
+    background: #fff;
+    border: 2px solid #e4e7eb;
+    border-radius: 12px;
+    margin: 1rem 0;
+  }
+  .qr-container canvas { display: block; }
+  .upi-ref {
+    font-size: .85rem;
+    color: #666;
+    margin: .75rem 0;
+    font-family: monospace;
+    background: #f5f5f5;
+    padding: .5rem;
+    border-radius: 6px;
+  }
+  .hint {
+    color: #555;
+    font-size: .9rem;
+    margin-top: 1rem;
+    line-height: 1.5;
+  }
+  .apps {
+    display: flex;
+    justify-content: center;
+    gap: .5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  .app-name {
+    background: #f0f0f0;
+    padding: .35rem .75rem;
+    border-radius: 20px;
+    font-size: .8rem;
+    color: #444;
+  }
+  .footer-note {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    font-size: .8rem;
+    color: #888;
+    line-height: 1.5;
+    text-align: center;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- PRODUCT LIST -->
+  <div id="shop-view">
+    <h1>Choose a product</h1>
+    <p class="subtitle">Tap an item below to pay via UPI</p>
+    <div id="product-list"></div>
+  </div>
+
+  <!-- PAY PANEL -->
+  <div id="pay-view" class="pay-panel">
+    <button class="back" id="back-btn">← Choose a different product</button>
+    <p class="pay-label" id="pay-label"></p>
+    <div class="amount" id="amount-display"></div>
+    <div class="qr-container" id="qr-container"></div>
+    <div class="upi-ref" id="upi-ref"></div>
+    <p class="hint">
+      Open <strong>GPay</strong>, <strong>PhonePe</strong>, <strong>Paytm</strong>, or any UPI app,<br>
+      tap <strong>Scan QR</strong>, and point at the code above.
+    </p>
+    <div class="apps">
+      <span class="app-name">GPay</span>
+      <span class="app-name">PhonePe</span>
+      <span class="app-name">Paytm</span>
+      <span class="app-name">BHIM</span>
+      <span class="app-name">Bank App</span>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    After paying, you'll receive a confirmation email with your download link within a few minutes.
+  </p>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION — CHANGE THESE VALUES
+// ============================================================
+const CONFIG = {
+  vpa: 'choprashivam064-4@okhdfcbank',
+  payeeName: 'Shivam Chopra',
+};
+
+// Six products — change names, prices, and descriptions
+const PRODUCTS = [
+  { id: 'ebook',       name: 'The Ebook',            price: 499,   desc: 'PDF download, 120 pages' },
+  { id: 'consult-1h',  name: '1-Hour Consultation',  price: 1500,  desc: 'Video call + notes' },
+  { id: 'consult-2h',  name: '2-Hour Consultation',  price: 2800,  desc: 'Extended session' },
+  { id: 'template',    name: 'Notion Template Pack', price: 299,   desc: '5 templates, lifetime access' },
+  { id: 'course',      name: 'Mini Course',          price: 999,   desc: '4 video modules' },
+  { id: 'bundle',      name: 'Everything Bundle',    price: 3499,  desc: 'All products, best value' },
+];
+// ============================================================
+
+(function () {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  let currentRef = null;
+
+  // ---------- Render product list ----------
+  function renderProducts() {
+    const list = $('product-list');
+    list.innerHTML = '';
+    for (const p of PRODUCTS) {
+      const btn = document.createElement('button');
+      btn.className = 'product';
+      btn.innerHTML =
+        '<span class="product-info">' +
+          '<span class="product-name">' + escapeHtml(p.name) + '</span>' +
+          '<span class="product-desc">' + escapeHtml(p.desc) + '</span>' +
+        '</span>' +
+        '<span class="product-price">₹' + p.price.toFixed(2) + '</span>';
+      btn.onclick = () => showQR(p);
+      list.appendChild(btn);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])
+    );
+  }
+
+  // ---------- Show QR for a specific product ----------
+  function showQR(product) {
+    $('shop-view').style.display = 'none';
+    $('pay-view').classList.add('active');
+
+    $('pay-label').textContent = product.name;
+    $('amount-display').textContent = '₹' + product.price.toFixed(2);
+
+    // Generate a fresh order reference per selection
+    const orderRef = 'ORD' + Date.now().toString(36).toUpperCase().slice(-6);
+    currentRef = orderRef;
+    $('upi-ref').textContent = 'Reference: ' + orderRef;
+
+    // Build the UPI URI with this product's price
+    const params = new URLSearchParams();
+    params.set('pa', CONFIG.vpa);
+    params.set('pn', CONFIG.payeeName);
+    params.set('am', product.price.toFixed(2));
+    params.set('cu', 'INR');
+    params.set('tn', product.name + ' ' + orderRef);
+
+    const upiUri = 'upi://pay?' + params.toString();
+
+    // Render QR
+    const qrContainer = $('qr-container');
+    qrContainer.innerHTML = '';
+    QRCode.toCanvas(
+      document.createElement('canvas'),
+      upiUri,
+      { width: 260, margin: 2, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } },
+      function (err, canvas) {
+        if (err) {
+          qrContainer.innerHTML = '<div style="color:#b00;padding:1rem">QR failed. Refresh page.</div>';
+          return;
+        }
+        qrContainer.appendChild(canvas);
+        console.log('UPI URI:', upiUri);
+      }
+    );
+  }
+
+  // ---------- Back button ----------
+  $('back-btn').onclick = () => {
+    $('pay-view').classList.remove('active');
+    $('shop-view').style.display = 'block';
+  };
+
+  // ---------- Boot ----------
+  renderProducts();
+})();
+</script>
+
+</body>
+</html>
