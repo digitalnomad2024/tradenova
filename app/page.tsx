@@ -17,10 +17,10 @@ export default function Home() {
             </a>
 
             <a
-              href="/signup"
+              href="/Get Started"
               className="rounded-lg bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
             >
-              signup
+              Get Started
             </a>
           </div>
         </div>
