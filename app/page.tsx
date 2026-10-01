@@ -39,10 +39,17 @@ function getPlan(key: string | null): Plan | null {
 // AUTH
 // ============================================================
 type User = {
-  id: string; name: string; email: string; password: string; createdAt: number;
-  plan?: string; accountSize?: number; purchasedAt?: number;
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  createdAt: number;
+  plan?: string;
+  accountSize?: number;
+  purchasedAt?: number;
   status?: "pending_verification" | "active";
   utr?: string;
+  referredBy?: string;
 };
 
 const USERS_KEY = "tradenova_users";
@@ -54,13 +61,19 @@ function getAllUsers(): User[] {
 }
 function saveAllUsers(users: User[]) { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
 
-function signup(name: string, email: string, password: string): User {
+function signup(name: string, email: string, password: string, referredBy?: string): User {
   const users = getAllUsers();
   const normalized = email.trim().toLowerCase();
-  if (users.some((u) => u.email === normalized)) throw new Error("An account with this email already exists.");
+  if (users.some((u) => u.email === normalized)) {
+    throw new Error("An account with this email already exists.");
+  }
   const user: User = {
     id: "usr_" + Math.random().toString(36).slice(2, 10),
-    name: name.trim(), email: normalized, password, createdAt: Date.now(),
+    name: name.trim(),
+    email: normalized,
+    password,
+    createdAt: Date.now(),
+    referredBy: referredBy?.trim() || undefined,
   };
   users.push(user);
   saveAllUsers(users);
@@ -306,17 +319,36 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referral, setReferral] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill referral from URL (?ref=XXX)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    const query = hash.split("?")[1] || "";
+    const params = new URLSearchParams(query);
+    const ref = params.get("ref");
+    if (ref) setReferral(ref);
+  }, []);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!name.trim() || !email.trim() || !password) { setError("All fields are required."); return; }
-    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+
+    if (!name.trim() || !email.trim() || !password) {
+      setError("All fields are required.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const u = signup(name, email, password);
+      const u = signup(name, email, password, referral);
       onAuth(u);
       navigate("challenge");
     } catch (err) {
@@ -331,35 +363,98 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
         <a href="#home" className="block text-center text-3xl font-bold">
           Trade<span className="text-cyan-400">Nova</span>
         </a>
+
         <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-8">
           <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="mt-2 text-sm text-slate-400">Start your TradeNova journey in under a minute.</p>
+          <p className="mt-2 text-sm text-slate-400">
+            Start your TradeNova journey in under a minute.
+          </p>
+
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300">Full Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shivam Chopra"
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400" />
+              <label className="block text-sm font-medium text-slate-300">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Shivam Chopra"
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
+              />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-300">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400" />
+              <label className="block text-sm font-medium text-slate-300">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
+              />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-300">Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters"
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400" />
+              <label className="block text-sm font-medium text-slate-300">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
+              />
             </div>
-            {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>}
-            <button type="submit" disabled={loading}
-              className="w-full rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50">
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300">
+                Referral Code <span className="text-slate-500">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={referral}
+                onChange={(e) => setReferral(e.target.value)}
+                placeholder="Friend's email or ID"
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                If a friend referred you, enter their code so they get credit.
+              </p>
+            </div>
+
+            {error && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
+            >
               {loading ? "Creating account…" : "Create Account"}
             </button>
           </form>
+
           <p className="mt-6 text-center text-sm text-slate-400">
             Already have an account?{" "}
-            <a href="#login" className="font-semibold text-cyan-400 hover:text-cyan-300">Log in</a>
+            <a href="#login" className="font-semibold text-cyan-400 hover:text-cyan-300">
+              Log in
+            </a>
           </p>
+        </div>
+
+        <div className="mt-6 text-center text-xs text-slate-600">
+          <a href="#home" className="hover:text-slate-400">
+            ← Back to Home
+          </a>
         </div>
       </div>
     </main>
@@ -613,22 +708,10 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
     setError("");
     const cleaned = utr.trim().replace(/\s/g, "");
 
-    if (!cleaned) {
-      setError("Please enter your UTR / Transaction Reference Number.");
-      return;
-    }
-    if (cleaned.length < 10) {
-      setError("UTR should be at least 10 characters. Check your UPI app for the correct reference.");
-      return;
-    }
-    if (cleaned.length > 22) {
-      setError("UTR looks too long. Please check the number in your UPI app.");
-      return;
-    }
-    if (!/^[A-Za-z0-9]+$/.test(cleaned)) {
-      setError("UTR should contain only letters and numbers.");
-      return;
-    }
+    if (!cleaned) { setError("Please enter your UTR / Transaction Reference Number."); return; }
+    if (cleaned.length < 10) { setError("UTR should be at least 10 characters. Check your UPI app for the correct reference."); return; }
+    if (cleaned.length > 22) { setError("UTR looks too long. Please check the number in your UPI app."); return; }
+    if (!/^[A-Za-z0-9]+$/.test(cleaned)) { setError("UTR should contain only letters and numbers."); return; }
 
     setConfirming(true);
     updateUser(user.id, {
@@ -661,7 +744,6 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
             <p className="mt-2 text-4xl font-bold">₹{plan.fee.toLocaleString("en-IN")}</p>
           </div>
 
-          {/* Step 1: Pay */}
           <div className="mt-8">
             <div className="mb-3 flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400 text-xs font-bold text-slate-950">1</span>
@@ -694,7 +776,6 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
             </div>
           </div>
 
-          {/* Step 2: Enter UTR */}
           <div className="mt-10 border-t border-slate-800 pt-8">
             <div className="mb-3 flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400 text-xs font-bold text-slate-950">2</span>
@@ -990,6 +1071,7 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
               <Row label="Plan" value={plan.name} />
               <Row label="Purchased" value={user.purchasedAt ? new Date(user.purchasedAt).toLocaleDateString("en-IN") : "—"} />
               {user.utr && <Row label="UTR" value={user.utr} />}
+              {user.referredBy && <Row label="Referred By" value={user.referredBy} />}
               <Row label="Account ID" value={user.id} />
             </div>
           </div>
@@ -1824,6 +1906,11 @@ function AdminUserRow({ user, onActivate, onDeactivate }: {
         {user.utr && (
           <p className="mt-1 inline-flex items-center gap-1 rounded bg-cyan-400/10 px-2 py-0.5 font-mono text-xs text-cyan-300">
             UTR: {user.utr}
+          </p>
+        )}
+        {user.referredBy && (
+          <p className="mt-1 inline-flex items-center gap-1 rounded bg-purple-400/10 px-2 py-0.5 font-mono text-xs text-purple-300">
+            Ref: {user.referredBy}
           </p>
         )}
       </div>
