@@ -15,6 +15,8 @@ const VPA = "choprashivam064-4@okhdfcbank";
 const PAYEE_NAME = "Shivam Chopra";
 const SUPPORT_EMAIL = "support@tradenova.com";
 const ADMIN_PASSWORD = "tradenova-admin-2026";
+const REFERRAL_COMMISSION_PCT = 10;
+// ============================================================
 
 // ============================================================
 // PLANS
@@ -236,6 +238,148 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 // ============================================================
+// REFERRAL CARD
+// ============================================================
+function ReferralCard({ user }: { user: User }) {
+  const [copied, setCopied] = useState(false);
+  const [stats, setStats] = useState({ total: 0, paid: 0, earned: 0 });
+
+  useEffect(() => {
+    const all = getAllUsers();
+    const referred = all.filter((u) => u.referredBy === user.id);
+    const paid = referred.filter((u) => u.plan);
+    let earned = 0;
+    for (const r of paid) {
+      const p = r.plan ? getPlan(r.plan) : null;
+      if (p) earned += Math.round(p.fee * (REFERRAL_COMMISSION_PCT / 100));
+    }
+    setStats({ total: referred.length, paid: paid.length, earned });
+  }, [user.id]);
+
+  const baseUrl = typeof window !== "undefined"
+    ? window.location.origin + window.location.pathname
+    : "";
+  const referralLink = `${baseUrl}#signup?ref=${user.id}`;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = referralLink;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  async function share() {
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({
+          title: "TradeNova",
+          text: "Join TradeNova and start your trading challenge",
+          url: referralLink,
+        });
+      } catch { /* cancelled */ }
+    } else {
+      copy();
+    }
+  }
+
+  return (
+    <div className="mb-6 rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-500/5 to-slate-900 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20 text-xl">
+            🎁
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Refer & Earn</h2>
+            <p className="text-xs text-slate-400">
+              Earn {REFERRAL_COMMISSION_PCT}% commission on every challenge your friends buy.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Friends Referred</p>
+          <p className="mt-1 text-2xl font-bold">{stats.total}</p>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Purchased</p>
+          <p className="mt-1 text-2xl font-bold">{stats.paid}</p>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Earned</p>
+          <p className="mt-1 text-2xl font-bold text-green-400">₹{stats.earned.toLocaleString("en-IN")}</p>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <label className="block text-xs font-medium text-slate-400">Your referral link</label>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+          <input
+            type="text"
+            readOnly
+            value={referralLink}
+            onFocus={(e) => e.currentTarget.select()}
+            className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 font-mono text-xs text-slate-300 outline-none focus:border-purple-400"
+          />
+          <button
+            onClick={copy}
+            className={`shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
+              copied
+                ? "bg-green-500/20 text-green-400 ring-1 ring-green-500/40"
+                : "bg-purple-500 text-white hover:bg-purple-400"
+            }`}
+          >
+            {copied ? "✓ Copied" : "Copy Link"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button onClick={share}
+          className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800">
+          📤 Share
+        </button>
+        <a href={`https://wa.me/?text=${encodeURIComponent("Join TradeNova and start your trading challenge: " + referralLink)}`}
+          target="_blank" rel="noopener noreferrer"
+          className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800">
+          WhatsApp
+        </a>
+        <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Join TradeNova and start your trading challenge")}&url=${encodeURIComponent(referralLink)}`}
+          target="_blank" rel="noopener noreferrer"
+          className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800">
+          X / Twitter
+        </a>
+        <a href={`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("Join TradeNova")}`}
+          target="_blank" rel="noopener noreferrer"
+          className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800">
+          Telegram
+        </a>
+        <a href={`mailto:?subject=${encodeURIComponent("Join TradeNova")}&body=${encodeURIComponent("Hey, check out TradeNova: " + referralLink)}`}
+          className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800">
+          Email
+        </a>
+      </div>
+
+      <p className="mt-4 text-xs text-slate-500">
+        Commission is credited when your referred friend purchases a challenge. Payouts processed monthly.
+      </p>
+    </div>
+  );
+}
+
+// ============================================================
 // HOME
 // ============================================================
 function HomeView() {
@@ -323,7 +467,6 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Auto-fill referral from URL (?ref=XXX)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hash = window.location.hash;
@@ -336,16 +479,8 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    if (!name.trim() || !email.trim() || !password) {
-      setError("All fields are required.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
+    if (!name.trim() || !email.trim() || !password) { setError("All fields are required."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
     try {
       const u = signup(name, email, password, referral);
@@ -363,98 +498,47 @@ function SignupView({ onAuth }: { onAuth: (u: User) => void }) {
         <a href="#home" className="block text-center text-3xl font-bold">
           Trade<span className="text-cyan-400">Nova</span>
         </a>
-
         <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-8">
           <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Start your TradeNova journey in under a minute.
-          </p>
-
+          <p className="mt-2 text-sm text-slate-400">Start your TradeNova journey in under a minute.</p>
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Shivam Chopra"
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
-              />
+              <label className="block text-sm font-medium text-slate-300">Full Name</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shivam Chopra"
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-slate-300">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
-              />
+              <label className="block text-sm font-medium text-slate-300">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-slate-300">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
-              />
+              <label className="block text-sm font-medium text-slate-300">Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters"
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400" />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-slate-300">
                 Referral Code <span className="text-slate-500">(optional)</span>
               </label>
-              <input
-                type="text"
-                value={referral}
-                onChange={(e) => setReferral(e.target.value)}
-                placeholder="Friend's email or ID"
+              <input type="text" value={referral} onChange={(e) => setReferral(e.target.value)}
+                placeholder="Friend's referral ID"
                 className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-600 outline-none focus:border-cyan-400"
-                autoComplete="off"
-                spellCheck={false}
-              />
+                autoComplete="off" spellCheck={false} />
               <p className="mt-1 text-xs text-slate-500">
                 If a friend referred you, enter their code so they get credit.
               </p>
             </div>
-
-            {error && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
-            >
+            {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>}
+            <button type="submit" disabled={loading}
+              className="w-full rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50">
               {loading ? "Creating account…" : "Create Account"}
             </button>
           </form>
-
           <p className="mt-6 text-center text-sm text-slate-400">
             Already have an account?{" "}
-            <a href="#login" className="font-semibold text-cyan-400 hover:text-cyan-300">
-              Log in
-            </a>
+            <a href="#login" className="font-semibold text-cyan-400 hover:text-cyan-300">Log in</a>
           </p>
-        </div>
-
-        <div className="mt-6 text-center text-xs text-slate-600">
-          <a href="#home" className="hover:text-slate-400">
-            ← Back to Home
-          </a>
         </div>
       </div>
     </main>
@@ -660,7 +744,7 @@ function ChallengeView({ user, onLogout }: { user: User; onLogout: (u: User | nu
 }
 
 // ============================================================
-// CHECKOUT — with UTR capture
+// CHECKOUT
 // ============================================================
 function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
   const plan = getPlan(planKey);
@@ -707,7 +791,6 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
   function handlePaid() {
     setError("");
     const cleaned = utr.trim().replace(/\s/g, "");
-
     if (!cleaned) { setError("Please enter your UTR / Transaction Reference Number."); return; }
     if (cleaned.length < 10) { setError("UTR should be at least 10 characters. Check your UPI app for the correct reference."); return; }
     if (cleaned.length > 22) { setError("UTR looks too long. Please check the number in your UPI app."); return; }
@@ -749,25 +832,21 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400 text-xs font-bold text-slate-950">1</span>
               <h2 className="text-sm font-semibold text-slate-300">Scan and pay via UPI</h2>
             </div>
-
             <div className="flex flex-col items-center">
               <div className="rounded-2xl bg-white p-4">
                 <canvas ref={canvasRef} className="block" />
               </div>
-
               {orderRef && (
                 <p className="mt-4 rounded-lg bg-slate-950 px-4 py-2 font-mono text-sm text-slate-400">
                   Reference: {orderRef}
                 </p>
               )}
-
               <p className="mt-4 text-center text-sm text-slate-400">
                 Open <strong className="text-slate-200">GPay</strong>,{" "}
                 <strong className="text-slate-200">PhonePe</strong>,{" "}
                 <strong className="text-slate-200">Paytm</strong>, or any UPI app,
                 tap <strong className="text-slate-200">Scan QR</strong>, and point at the code above.
               </p>
-
               {upiUri && (
                 <a href={upiUri} className="mt-6 text-sm font-semibold text-blue-400 underline hover:text-blue-300 md:hidden">
                   Tap here to open your UPI app
@@ -781,46 +860,32 @@ function CheckoutView({ user, planKey }: { user: User; planKey: string }) {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400 text-xs font-bold text-slate-950">2</span>
               <h2 className="text-sm font-semibold text-slate-300">Enter your UTR number</h2>
             </div>
-
             <p className="mb-4 text-sm text-slate-400">
               After paying, open your UPI app → tap the transaction → copy the{" "}
               <strong className="text-slate-200">UTR</strong> or{" "}
-              <strong className="text-slate-200">Transaction ID</strong> (usually 12 digits). Paste it below so we can verify your payment faster.
+              <strong className="text-slate-200">Transaction ID</strong> (usually 12 digits).
             </p>
-
             <div>
               <label className="block text-sm font-medium text-slate-300">
                 UTR / Transaction Reference Number
               </label>
-              <input
-                type="text"
-                value={utr}
+              <input type="text" value={utr}
                 onChange={(e) => { setUtr(e.target.value); setError(""); }}
-                placeholder="e.g., 412345678901"
-                maxLength={24}
+                placeholder="e.g., 412345678901" maxLength={24}
                 className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-white placeholder-slate-600 outline-none focus:border-cyan-400"
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                Where to find it: GPay → tap the payment → &quot;UPI transaction ID&quot;. PhonePe → History → tap payment → &quot;UTR&quot;.
-              </p>
+                autoComplete="off" spellCheck={false} />
             </div>
-
             {error && (
               <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
                 {error}
               </div>
             )}
-
             <button onClick={handlePaid} disabled={confirming}
               className="mt-6 w-full rounded-xl bg-cyan-400 px-6 py-4 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50">
               {confirming ? "Submitting…" : "Submit for Verification →"}
             </button>
-
             <p className="mt-3 text-center text-xs text-slate-500">
               We&apos;ll verify your payment against your UTR and activate your account within 24 hours.
-              Email <span className="text-slate-300">{SUPPORT_EMAIL}</span> if you have any issues.
             </p>
           </div>
         </div>
@@ -880,13 +945,18 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
     return (
       <main className="min-h-screen bg-slate-950 text-white">
         <NavBar user={user} onLogout={onLogout} />
-        <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-          <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
-          <p className="mt-3 text-slate-400">You haven&apos;t purchased a challenge yet. Choose one to get started.</p>
-          <button onClick={() => navigate("challenge")}
-            className="mt-8 rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 hover:bg-cyan-300">
-            Choose a Challenge →
-          </button>
+        <div className="mx-auto max-w-4xl px-4 py-10 md:px-6">
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
+            <p className="mt-3 text-slate-400">
+              You haven&apos;t purchased a challenge yet. Choose one to get started.
+            </p>
+            <button onClick={() => navigate("challenge")}
+              className="mt-6 rounded-xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 hover:bg-cyan-300">
+              Choose a Challenge →
+            </button>
+          </div>
+          <ReferralCard user={user} />
         </div>
       </main>
     );
@@ -1051,7 +1121,7 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="mb-6 grid gap-5 md:grid-cols-2">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-lg font-semibold">Challenge Rules</h2>
             <div className="mt-4 space-y-3 text-sm">
@@ -1078,7 +1148,7 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
         </div>
 
         {user.status !== "active" && (
-          <div className="mt-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-6 text-center">
+          <div className="mb-6 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-6 text-center">
             <p className="text-sm text-cyan-300">
               We&apos;re verifying your payment. Your trading credentials will be emailed to{" "}
               <span className="font-semibold">{user.email}</span> within 24 hours.
@@ -1086,7 +1156,11 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
           </div>
         )}
 
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mb-6">
+          <ReferralCard user={user} />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <button onClick={() => navigate("withdraw")}
             className="group rounded-2xl border border-slate-700 bg-slate-900 px-6 py-6 text-left transition hover:border-slate-500 hover:bg-slate-800">
             <div className="text-2xl">💸</div>
