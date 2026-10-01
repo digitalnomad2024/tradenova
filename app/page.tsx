@@ -803,7 +803,7 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
                 <YAxis stroke="#64748b" tick={{ fontSize: 11 }}
                   tickFormatter={(v) => `₹${(v / 1000).toFixed(1)}k`} domain={["auto", "auto"]} />
                 <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", fontSize: "12px" }}
-                  formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Equity"]}
+                  formatter={(v: any) => [`₹${v.toLocaleString("en-IN")}`, "Equity"]}
                   labelFormatter={(l) => `Trade #${l}`} />
                 <ReferenceLine y={plan.account} stroke="#475569" strokeDasharray="4 4"
                   label={{ value: "Start", fill: "#94a3b8", fontSize: 10, position: "insideTopLeft" }} />
@@ -831,7 +831,7 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
                 <XAxis dataKey="trade" stroke="#64748b" tick={{ fontSize: 11 }} />
                 <YAxis stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
                 <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", fontSize: "12px" }}
-                  formatter={(v: number) => [`${v}%`, "Drawdown"]} labelFormatter={(l) => `Trade #${l}`} />
+                  formatter={(v: any) => [`${v}%`, "Drawdown"]} labelFormatter={(l) => `Trade #${l}`} />
                 <ReferenceLine y={-5} stroke="#eab308" strokeDasharray="4 4"
                   label={{ value: "Daily limit -5%", fill: "#eab308", fontSize: 10, position: "insideBottomLeft" }} />
                 <ReferenceLine y={-10} stroke="#ef4444" strokeDasharray="4 4"
@@ -1417,8 +1417,8 @@ function TradingTerminal({ user, plan, onLogout }: { user: User; plan: Plan; onL
                     <YAxis stroke="#64748b" tick={{ fontSize: 10 }} domain={["auto", "auto"]}
                       tickFormatter={(v) => v.toFixed(inst.decimals)} />
                     <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", fontSize: "12px" }}
-                      formatter={(v: number) => [v.toFixed(inst.decimals), symbol]}
-                      labelFormatter={(t) => new Date(t).toLocaleTimeString("en-IN")} />
+                      formatter={(v: any) => [v.toFixed(inst.decimals), symbol]}
+                      labelFormatter={(t: any) => new Date(t).toLocaleTimeString("en-IN")} />
                     <Line type="monotone" dataKey="price"
                       stroke={sessionChange >= 0 ? "#22d3ee" : "#ef4444"}
                       strokeWidth={2} dot={false} isAnimationActive={false} />
