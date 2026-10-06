@@ -1,27 +1,4 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import "./globals.css";
-
-function HashRedirect() {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (pathname !== "/") return;
-
-    const hash = window.location.hash.replace("#", "");
-    if (!hash) return;
-
-    const allowed = ["trade", "dashboard", "login", "checkout", "forgot-password"];
-    if (allowed.includes(hash)) {
-      router.replace(`/${hash}`);
-    }
-  }, [router, pathname]);
-
-  return null;
-}
 
 export default function RootLayout({
   children,
@@ -30,10 +7,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <HashRedirect />
-        {children}
-      </body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var hash = window.location.hash.replace('#', '').replace('/', '');
+                var allowed = ['trade', 'dashboard', 'login', 'checkout', 'forgot-password'];
+                if (hash && allowed.indexOf(hash) !== -1) {
+                  window.location.replace('/' + hash);
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
