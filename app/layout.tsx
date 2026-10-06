@@ -1,4 +1,5 @@
 import "./globals.css";
+import HashRedirect from "./HashRedirect";
 
 export default function RootLayout({
   children,
@@ -7,22 +8,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                var hash = window.location.hash.replace('#', '').replace('/', '');
-                var allowed = ['trade', 'dashboard', 'login', 'checkout', 'forgot-password'];
-                if (hash && allowed.indexOf(hash) !== -1) {
-                  window.location.replace('/' + hash);
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body>{children}</body>
+      <body>
+        <HashRedirect />
+        {children}
+      </body>
     </html>
   );
 }
