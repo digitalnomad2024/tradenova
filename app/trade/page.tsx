@@ -799,9 +799,6 @@ function TradeContent() {
                 {market.label}
               </button>
 
-              <p className="mt-2 text-center text-xs text-slate-600">
-                Demo trade — simulated only
-              </p>
             </div>
           </div>
         </div>
