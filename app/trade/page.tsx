@@ -916,7 +916,7 @@ function TradeContent() {
 
         <div className="mt-6">
           <Link
-            href={`/dashboard?plan=${selected}`}
+            href={`/?plan=${selected}`}
             className="text-sm text-slate-400 hover:text-white"
           >
             ← Back to Dashboard
