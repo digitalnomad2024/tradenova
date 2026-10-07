@@ -719,7 +719,6 @@ function TradeContent() {
 
           <div className="lg:col-span-1">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <h3 className="text-lg font-bold">Place Demo Trade</h3>
 
               <div className="mt-3 rounded-lg bg-slate-900 px-3 py-2 text-center text-sm">
                 <span className="text-slate-500">Trading: </span>
