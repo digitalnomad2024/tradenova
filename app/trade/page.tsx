@@ -3,7 +3,13 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { loadTrades,  insertTrade,  closeTradeInDb,  getCurrentUserId,  type DbTrade,} from "../lib/trades-db";
+import {
+  loadTrades,
+  insertTrade,
+  closeTradeInDb,
+  getCurrentUserId,
+  type DbTrade,
+} from "../lib/trades-db";
 
 const plans: Record<string, { name: string; account: number; fee: number }> = {
   starter: { name: "Starter", account: 3000, fee: 1000 },
@@ -14,7 +20,6 @@ const plans: Record<string, { name: string; account: number; fee: number }> = {
   elite: { name: "Elite", account: 25000, fee: 2490 },
 };
 
-// 🪙 Available markets
 const MARKETS = [
   { symbol: "btcusdt", label: "BTC/USDT", name: "Bitcoin" },
   { symbol: "ethusdt", label: "ETH/USDT", name: "Ethereum" },
@@ -50,9 +55,6 @@ function dbToLocal(t: DbTrade): Trade {
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// Chart config: timeframes + indicators
-// ─────────────────────────────────────────────────────────────
 const TIMEFRAMES = [
   { key: "1m", label: "1m", seconds: 60 },
   { key: "5m", label: "5m", seconds: 300 },
@@ -158,9 +160,6 @@ function LiveChart({
   intervalRef.current =
     TIMEFRAMES.find((t) => t.key === intervalKey) ?? TIMEFRAMES[0];
 
-  // ─────────────────────────────────────────────────────────
-  // 1) Init chart & load historical candles
-  // ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!chartContainerRef.current) return;
     let cancelled = false;
@@ -206,7 +205,6 @@ function LiveChart({
       });
       seriesRef.current = series;
 
-      // Trendline series (empty until user clicks two points)
       trendlineSeriesRef.current = chart.addSeries(LineSeries, {
         color: "#f43f5e",
         lineWidth: 2,
@@ -216,7 +214,6 @@ function LiveChart({
       });
       trendPointsRef.current = [];
 
-      // Indicator series
       indSeriesRef.current = {};
       const activeKeys = indicatorSig ? indicatorSig.split(",") : [];
       for (const key of activeKeys) {
@@ -239,7 +236,6 @@ function LiveChart({
         };
       }
 
-      // Trendline: click two points to draw
       chart.subscribeClick((param: any) => {
         if (!trendlineModeRef.current) return;
         if (!param.point || param.time === undefined) return;
@@ -258,7 +254,6 @@ function LiveChart({
         trendlineSeriesRef.current?.setData(sorted);
       });
 
-      // Historical candles
       try {
         const tf = intervalRef.current;
         const res = await fetch(
@@ -314,9 +309,6 @@ function LiveChart({
     };
   }, [symbol, intervalKey, indicatorSig]);
 
-  // ─────────────────────────────────────────────────────────
-  // 2) Live stream
-  // ─────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     let ws: WebSocket | null = null;
@@ -456,9 +448,7 @@ function LiveChart({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
-      {/* ─── Toolbar: timeframe, indicators, trendline ─── */}
       <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-slate-900/60 px-3 py-2">
-        {/* Timeframe */}
         <div className="flex items-center gap-0.5 rounded-lg bg-slate-950 p-0.5">
           {TIMEFRAMES.map((tf) => (
             <button
@@ -475,7 +465,6 @@ function LiveChart({
           ))}
         </div>
 
-        {/* Indicators */}
         <div className="flex items-center gap-1">
           {INDICATOR_DEFS.map((ind) => {
             const active = indicators.includes(ind.key);
@@ -496,7 +485,6 @@ function LiveChart({
           })}
         </div>
 
-        {/* Trendline */}
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={() => setTrendlineMode((v) => !v)}
@@ -519,7 +507,6 @@ function LiveChart({
         </div>
       </div>
 
-      {/* ─── Chart area ─── */}
       <div className="relative">
         <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-4">
           <div>
@@ -557,32 +544,50 @@ function LiveChart({
 
 function TradeContent() {
   const searchParams = useSearchParams();
-  const selected = searchParams.get("plan") || "starter";
-  const plan = plans[selected] || plans.starter;
 
-  // ✅ balance is now mutable
-const [balance, setBalance] = useState(plan.account);
-const [trades, setTrades] = useState<Trade[]>([]);
-const [loadingTrades, setLoadingTrades] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<string>("starter");
 
-useEffect(() => {
-  const userId = getCurrentUserId();
-  if (!userId) {
-    setLoadingTrades(false);
-    return;
-  }
-  loadTrades(userId).then((rows) => {
-    setTrades(rows.map(dbToLocal));
-    setLoadingTrades(false);
-  });
-}, []);
+  useEffect(() => {
+    const urlPlan = searchParams.get("plan");
+    if (urlPlan) {
+      setSelectedPlan(urlPlan);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const userId = localStorage.getItem("tradenova_session");
+        const users = JSON.parse(localStorage.getItem("tradenova_users") || "[]");
+        const user = users.find((u: any) => u.id === userId);
+        setSelectedPlan(user?.plan || "starter");
+      } catch {
+        setSelectedPlan("starter");
+      }
+    }
+  }, [searchParams]);
+
+  const plan = plans[selectedPlan] || plans.starter;
+
+  const [balance, setBalance] = useState(plan.account);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loadingTrades, setLoadingTrades] = useState(true);
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [amount, setAmount] = useState("");
   const [leverage, setLeverage] = useState(5);
   const [currentPrice, setCurrentPrice] = useState(0);
-
   const [marketIndex, setMarketIndex] = useState(0);
   const market = MARKETS[marketIndex];
+
+  useEffect(() => {
+    const userId = getCurrentUserId();
+    if (!userId) {
+      setLoadingTrades(false);
+      return;
+    }
+    loadTrades(userId).then((rows) => {
+      setTrades(rows.map(dbToLocal));
+      setLoadingTrades(false);
+    });
+  }, []);
 
   const openPositions = trades.filter((t) => t.status === "OPEN");
   const closedTrades = trades.filter((t) => t.status === "CLOSED");
@@ -601,60 +606,59 @@ useEffect(() => {
   const status = challengeFailed ? "FAILED" : challengePassed ? "PASSED" : "ACTIVE";
 
   const placeTrade = async () => {
-  const tradeAmount = Number(amount);
-  if (!tradeAmount || tradeAmount <= 0) {
-    alert("Enter a valid trade amount.");
-    return;
-  }
-  if (tradeAmount > balance) {
-    alert("Insufficient free balance.");
-    return;
-  }
+    const tradeAmount = Number(amount);
+    if (!tradeAmount || tradeAmount <= 0) {
+      alert("Enter a valid trade amount.");
+      return;
+    }
+    if (tradeAmount > balance) {
+      alert("Insufficient free balance.");
+      return;
+    }
 
-  const userId = getCurrentUserId();
-  if (!userId) {
-    alert("Please log in again.");
-    return;
-  }
+    const userId = getCurrentUserId();
+    if (!userId) {
+      alert("Please log in again.");
+      return;
+    }
 
-  const randomPnL = Math.round((Math.random() * 2 - 0.9) * tradeAmount * 0.05);
+    const randomPnL = Math.round((Math.random() * 2 - 0.9) * tradeAmount * 0.05);
 
-  const saved = await insertTrade({
-    user_id: userId,
-    pair: market.label,
-    side: orderType,
-    amount: tradeAmount,
-    entry: currentPrice || 0,
-    pnl: randomPnL,
-  });
+    const saved = await insertTrade({
+      user_id: userId,
+      pair: market.label,
+      side: orderType,
+      amount: tradeAmount,
+      entry: currentPrice || 0,
+      pnl: randomPnL,
+    });
 
-  if (!saved) {
-    alert("Failed to save trade. Try again.");
-    return;
-  }
+    if (!saved) {
+      alert("Failed to save trade. Try again.");
+      return;
+    }
 
-  setTrades((prev) => [dbToLocal(saved), ...prev]);
-  setBalance((b) => b - tradeAmount);
-  setAmount("");
-};
+    setTrades((prev) => [dbToLocal(saved), ...prev]);
+    setBalance((b) => b - tradeAmount);
+    setAmount("");
+  };
 
- const closeTrade = async (id: number) => {
-  const trade = trades.find((t) => t.id === id);
-  if (!trade) return;
+  const closeTrade = async (id: number) => {
+    const trade = trades.find((t) => t.id === id);
+    if (!trade) return;
 
-  const exitPrice = currentPrice || trade.entry;
-  const updated = await closeTradeInDb(id, exitPrice, trade.profit);
-  if (!updated) {
-    alert("Failed to close trade. Try again.");
-    return;
-  }
+    const exitPrice = currentPrice || trade.entry;
+    const updated = await closeTradeInDb(id, exitPrice, trade.profit);
+    if (!updated) {
+      alert("Failed to close trade. Try again.");
+      return;
+    }
 
-  setBalance((b) => b + trade.amount + trade.profit);
-  setTrades((prev) =>
-    prev.map((t) => (t.id === id ? dbToLocal(updated) : t))
-  );
-};
-
+    setBalance((b) => b + trade.amount + trade.profit);
+    setTrades((prev) =>
+      prev.map((t) => (t.id === id ? dbToLocal(updated) : t))
+    );
+  };
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -683,7 +687,6 @@ useEffect(() => {
       </nav>
 
       <div className="mx-auto max-w-7xl px-6 py-6">
-        {/* Stat cards: added "Margin Used" */}
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-xs text-slate-500">Balance</p>
@@ -726,7 +729,6 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* 🪙 MARKET SELECTOR TABS */}
         <div className="mb-4 flex flex-wrap gap-2">
           {MARKETS.map((m, i) => (
             <button
@@ -754,7 +756,6 @@ useEffect(() => {
 
           <div className="lg:col-span-1">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-
               <div className="mt-3 rounded-lg bg-slate-900 px-3 py-2 text-center text-sm">
                 <span className="text-slate-500">Trading: </span>
                 <span className="font-bold text-cyan-400">{market.label}</span>
@@ -832,7 +833,6 @@ useEffect(() => {
                 {orderType === "BUY" ? "Buy / Long" : "Sell / Short"}{" "}
                 {market.label}
               </button>
-
             </div>
           </div>
         </div>
@@ -841,7 +841,7 @@ useEffect(() => {
           <h3 className="text-lg font-bold">Open Positions</h3>
           {openPositions.length === 0 ? (
             <div className="mt-4 rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-500">
-              No open positions. Place a demo trade to get started.
+              No open positions. Place a trade to get started.
             </div>
           ) : (
             <div className="mt-4 overflow-x-auto">

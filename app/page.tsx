@@ -1167,7 +1167,7 @@ function DashboardView({ user, onLogout }: { user: User; onLogout: (u: User | nu
             <div className="mt-3 text-lg font-semibold">Withdrawal</div>
             <div className="mt-1 text-sm text-slate-400">Request a payout from your profits</div>
           </button>
-          <button onClick={() => { window.location.href = "/trade"; }}
+          <button onClick={() => { window.location.href = `/trade?plan=${user?.plan || "starter"}`; }}
             className="group rounded-2xl border border-cyan-400/40 bg-cyan-400/10 px-6 py-6 text-left transition hover:border-cyan-400/70 hover:bg-cyan-400/20">
             <div className="text-2xl">📈</div>
             <div className="mt-3 text-lg font-semibold text-cyan-300">Start Trading</div>
