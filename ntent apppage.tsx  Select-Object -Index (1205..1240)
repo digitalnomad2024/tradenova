@@ -1,0 +1,15 @@
+[33mf3ad406[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Hardcode Supabase URL to bypass env var issue
+[33m67f5218[m Hardcode Supabase URL to bypass env issue
+[33m306d727[m Use getSupabase() everywhere in trades-db
+[33m632e32e[m Full rewrite of trade page: Supabase persistence, plan sync, cleanup
+[33m645864e[m Persist trades to Supabase: add trades-db helper, wire trade page to database
+[33m74d3bc8[m Back to dashboard via window.location.href
+[33mf7794b5[m Back to Dashboard: use plain anchor to preserve hash
+[33mabee295[m Back to Dashboard link goes to /#dashboard
+[33mbdceeb6[m Back to Dashboard link goes to /#dashboard
+[33m4891a66[m Remove Place Demo Trade heading
+[33m962bac9[m Start Trading button now navigates to /trade instead of internal hash route
+[33m0d81f96[m Fix back-to-dashboard link (was /dashboard, should be /)
+[33mc993551[m Switch Supabase to PKCE flow to fix hash fragment persistence
+[33m88fa901[m update
+[33maf22972[m 

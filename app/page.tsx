@@ -1210,7 +1210,9 @@ function MetricBox({ label, value, sub, accent }: {
 
 type Trade = { id: number; date: string; pair: string; side: "BUY" | "SELL"; pnl: number };
 
-function generateTrades(userId: string, count: number): Trade[] {
+function generateTrades(_userId: string, _count: number): any[] {
+  return [];
+}
   let seed = 0;
   for (let i = 0; i < userId.length; i++) seed = (seed * 31 + userId.charCodeAt(i)) >>> 0;
   const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0xffffffff; };
