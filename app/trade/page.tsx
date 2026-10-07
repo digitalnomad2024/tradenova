@@ -914,12 +914,12 @@ function TradeContent() {
         </div>
 
         <div className="mt-6">
-          <a
-            href="/#dashboard"
+          <button
+            onClick={() => { window.location.href = "/#dashboard"; }}
             className="text-sm text-slate-400 hover:text-white"
           >
             ← Back to Dashboard
-          </a>
+          </button>
         </div>
       </div>
     </main>
