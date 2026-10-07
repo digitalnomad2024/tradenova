@@ -547,24 +547,22 @@ function TradeContent() {
 
   const [selectedPlan, setSelectedPlan] = useState<string>("starter");
 
-  useEffect(() => {
-    const urlPlan = searchParams.get("plan");
-    if (urlPlan) {
-      setSelectedPlan(urlPlan);
-      return;
-    }
-    if (typeof window !== "undefined") {
-      try {
-        const userId = localStorage.getItem("tradenova_session");
-        const users = JSON.parse(localStorage.getItem("tradenova_users") || "[]");
-        const user = users.find((u: any) => u.id === userId);
-        setSelectedPlan(user?.plan || "starter");
-      } catch {
-        setSelectedPlan("starter");
-      }
-    }
-  }, [searchParams]);
-
+ useEffect(() => {
+  const urlPlan = new URLSearchParams(window.location.search).get("plan");
+  if (urlPlan) {
+    setSelectedPlan(urlPlan);
+    return;
+  }
+  // Fallback: read from the logged-in user's saved profile
+  try {
+    const userId = localStorage.getItem("tradenova_session");
+    const users = JSON.parse(localStorage.getItem("tradenova_users") || "[]");
+    const user = users.find((u: any) => u.id === userId);
+    setSelectedPlan(user?.plan || "starter");
+  } catch {
+    setSelectedPlan("starter");
+  }
+}, []);
   const plan = plans[selectedPlan] || plans.starter;
 
   const [balance, setBalance] = useState(plan.account);
