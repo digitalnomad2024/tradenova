@@ -1213,26 +1213,6 @@ type Trade = { id: number; date: string; pair: string; side: "BUY" | "SELL"; pnl
 function generateTrades(_userId: string, _count: number): any[] {
   return [];
 }
-  let seed = 0;
-  for (let i = 0; i < userId.length; i++) seed = (seed * 31 + userId.charCodeAt(i)) >>> 0;
-  const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0xffffffff; };
-  const pairs = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "BTC/USD", "XAU/USD", "USD/CAD"];
-  const now = Date.now();
-  const trades: Trade[] = [];
-  for (let i = 0; i < count; i++) {
-    const win = rand() > 0.42;
-    const size = 120 + Math.floor(rand() * 480);
-    const pnl = win ? size : -Math.round(size * (0.6 + rand() * 0.5));
-    trades.push({
-      id: i + 1,
-      date: new Date(now - (count - i) * 5 * 3600 * 1000).toISOString(),
-      pair: pairs[Math.floor(rand() * pairs.length)],
-      side: rand() > 0.5 ? "BUY" : "SELL",
-      pnl,
-    });
-  }
-  return trades;
-}
 
 // ============================================================
 // WITHDRAWAL
