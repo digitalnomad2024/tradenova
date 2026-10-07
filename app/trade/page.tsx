@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { loadTrades,  insertTrade,  closeTradeInDb,  getCurrentUserId,  type DbTrade,} from "../lib/trades-db";
 
 const plans: Record<string, { name: string; account: number; fee: number }> = {
   starter: { name: "Starter", account: 3000, fee: 1000 },
@@ -34,6 +35,20 @@ type Trade = {
   status: "OPEN" | "CLOSED";
   timestamp: string;
 };
+
+function dbToLocal(t: DbTrade): Trade {
+  return {
+    id: t.id,
+    pair: t.pair,
+    type: t.side,
+    amount: Number(t.amount),
+    entry: Number(t.entry),
+    exit: t.exit === null ? null : Number(t.exit),
+    profit: Number(t.pnl),
+    status: t.status,
+    timestamp: new Date(t.created_at).toLocaleString("en-IN"),
+  };
+}
 
 // ─────────────────────────────────────────────────────────────
 // Chart config: timeframes + indicators
@@ -546,8 +561,21 @@ function TradeContent() {
   const plan = plans[selected] || plans.starter;
 
   // ✅ balance is now mutable
-  const [balance, setBalance] = useState(plan.account);
-  const [trades, setTrades] = useState<Trade[]>([]);
+const [balance, setBalance] = useState(plan.account);
+const [trades, setTrades] = useState<Trade[]>([]);
+const [loadingTrades, setLoadingTrades] = useState(true);
+
+useEffect(() => {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    setLoadingTrades(false);
+    return;
+  }
+  loadTrades(userId).then((rows) => {
+    setTrades(rows.map(dbToLocal));
+    setLoadingTrades(false);
+  });
+}, []);
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [amount, setAmount] = useState("");
   const [leverage, setLeverage] = useState(5);
@@ -572,54 +600,61 @@ function TradeContent() {
   const challengePassed = totalPnL >= profitTarget && closedTrades.length >= 5;
   const status = challengeFailed ? "FAILED" : challengePassed ? "PASSED" : "ACTIVE";
 
-  const placeTrade = () => {
-    const tradeAmount = Number(amount);
-    if (!tradeAmount || tradeAmount <= 0) {
-      alert("Enter a valid trade amount.");
-      return;
-    }
-    if (tradeAmount > balance) {
-      alert("Insufficient free balance.");
-      return;
-    }
+  const placeTrade = async () => {
+  const tradeAmount = Number(amount);
+  if (!tradeAmount || tradeAmount <= 0) {
+    alert("Enter a valid trade amount.");
+    return;
+  }
+  if (tradeAmount > balance) {
+    alert("Insufficient free balance.");
+    return;
+  }
 
-    const randomPnL = Math.round((Math.random() * 2 - 0.9) * tradeAmount * 0.05);
-    const newTrade: Trade = {
-      id: Date.now(),
-      pair: market.label,
-      type: orderType,
-      amount: tradeAmount,
-      entry: currentPrice || 0,
-      exit: null,
-      profit: randomPnL,
-      status: "OPEN",
-      timestamp: new Date().toLocaleString("en-IN"),
-    };
+  const userId = getCurrentUserId();
+  if (!userId) {
+    alert("Please log in again.");
+    return;
+  }
 
-    setTrades((prev) => [newTrade, ...prev]);
-    setBalance((b) => b - tradeAmount); // lock margin
-    setAmount("");
-  };
+  const randomPnL = Math.round((Math.random() * 2 - 0.9) * tradeAmount * 0.05);
 
-  const closeTrade = (id: number) => {
-    const trade = trades.find((t) => t.id === id);
-    if (!trade) return;
+  const saved = await insertTrade({
+    user_id: userId,
+    pair: market.label,
+    side: orderType,
+    amount: tradeAmount,
+    entry: currentPrice || 0,
+    pnl: randomPnL,
+  });
 
-    setBalance((b) => b + trade.amount + trade.profit); // return margin + P&L
+  if (!saved) {
+    alert("Failed to save trade. Try again.");
+    return;
+  }
 
-    setTrades((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              status: "CLOSED" as const,
-              exit: currentPrice || t.entry,
-              timestamp: new Date().toLocaleString("en-IN"),
-            }
-          : t
-      )
-    );
-  };
+  setTrades((prev) => [dbToLocal(saved), ...prev]);
+  setBalance((b) => b - tradeAmount);
+  setAmount("");
+};
+
+ const closeTrade = async (id: number) => {
+  const trade = trades.find((t) => t.id === id);
+  if (!trade) return;
+
+  const exitPrice = currentPrice || trade.entry;
+  const updated = await closeTradeInDb(id, exitPrice, trade.profit);
+  if (!updated) {
+    alert("Failed to close trade. Try again.");
+    return;
+  }
+
+  setBalance((b) => b + trade.amount + trade.profit);
+  setTrades((prev) =>
+    prev.map((t) => (t.id === id ? dbToLocal(updated) : t))
+  );
+};
+
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
