@@ -1,19 +1,12 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = "https://kedujvkldghloueusmmn.supabase.co";
-const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const supabasePublishableKey = "sb_publishable_ub1WUgCcGgTXDkAGdQ1J9A_alcQMFzs";
 
 let supabaseClient: SupabaseClient | null = null;
 
 export function getSupabase(): SupabaseClient {
   if (supabaseClient) return supabaseClient;
-
-  if (!supabaseUrl || !supabasePublishableKey) {
-    throw new Error(
-      "Supabase environment variables are missing. " +
-      "Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY are set."
-    );
-  }
 
   supabaseClient = createClient(supabaseUrl, supabasePublishableKey, {
     auth: {
