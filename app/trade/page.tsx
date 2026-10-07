@@ -914,12 +914,12 @@ function TradeContent() {
         </div>
 
         <div className="mt-6">
-          <Link
+          <a
             href="/#dashboard"
             className="text-sm text-slate-400 hover:text-white"
           >
             ← Back to Dashboard
-          </Link>
+          </a>
         </div>
       </div>
     </main>
