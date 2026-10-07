@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 
 export type DbTrade = {
   id: number;
@@ -20,7 +20,7 @@ export function getCurrentUserId(): string | null {
 }
 
 export async function loadTrades(userId: string): Promise<DbTrade[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("trades")
     .select("*")
     .eq("user_id", userId)
@@ -41,7 +41,7 @@ export async function insertTrade(trade: {
   entry: number;
   pnl: number;
 }): Promise<DbTrade | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("trades")
     .insert({
       ...trade,
@@ -63,7 +63,7 @@ export async function closeTradeInDb(
   exit: number,
   pnl: number
 ): Promise<DbTrade | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("trades")
     .update({
       status: "CLOSED",

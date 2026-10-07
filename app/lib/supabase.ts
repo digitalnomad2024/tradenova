@@ -1,28 +1,28 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabasePublishableKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl) {
-  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-}
+let supabaseClient: SupabaseClient | null = null;
 
-if (!supabasePublishableKey) {
-  throw new Error(
-    "Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-  );
-}
+export function getSupabase(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
 
-export const supabase = createClient(
-  supabaseUrl,
-  supabasePublishableKey,
-  {
+  if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error(
+      "Supabase environment variables are missing. " +
+      "Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY are set."
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabasePublishableKey, {
     auth: {
       flowType: "pkce",
       detectSessionInUrl: true,
       persistSession: true,
       autoRefreshToken: true,
     },
-  }
-);
+  });
+
+  return supabaseClient;
+}
